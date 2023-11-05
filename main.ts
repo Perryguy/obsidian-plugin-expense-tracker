@@ -14,15 +14,16 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
   monthlyBudget: 1000,
   billDueDay: 1,
   salaryDate: '2023-01-01',
-  salary: 0, // YYYY-MM-DD format
-  // Set other default values here
+  salary: 0, 
 };
 
 export default class FinanceTrackerPlugin extends Plugin {
   settings: MyPluginSettings;
-  financeFolderPath: string = '/Finances';
-  DailyExpensesPath: string = `${this.financeFolderPath}/DailyExpenses`;
-  MonthlyReportPath: string = `${this.financeFolderPath}/MonthlyReports`;
+  financeFolderPath = '/Finances';
+  DailyExpensesPath = `${this.financeFolderPath}/DailyExpenses`;
+  MonthlyReportPath = `${this.financeFolderPath}/MonthlyReports`;
+  dataFilePath = '.obsidian/plugins/obsidian-plugin-expense-tracker/data.json';
+  data = { transactions: [] };
 
   async onload() {
     await this.ensureAllFinanceFoldersExist();
@@ -34,7 +35,7 @@ export default class FinanceTrackerPlugin extends Plugin {
       id: 'open-finance-tracker-modal',
       name: 'Open Finance Tracker',
       callback: () => {
-        new FinanceTrackerModal(this.app, this).open();
+        new FinanceTrackerModal(this.app, this, this.dataFilePath).open();
       },
     });
 
@@ -60,26 +61,23 @@ export default class FinanceTrackerPlugin extends Plugin {
 
   async ensureAllFinanceFoldersExist(): Promise<void> {
     // Ensure the main finance folder exists
-    const financeFolderPath = "/Finances";
-    let folderExists = await this.app.vault.adapter.exists(financeFolderPath);
+    let folderExists = await this.app.vault.adapter.exists(this.financeFolderPath);
     if (!folderExists) {
-      await this.app.vault.createFolder(financeFolderPath);
+      await this.app.vault.createFolder(this.financeFolderPath);
       new Notice('Finance folder created successfully.', 3000);
     }
 
     // Ensure the monthly report folder exists
-    const monthlyReportPath = `${financeFolderPath}/MonthlyReports`;
-    folderExists = await this.app.vault.adapter.exists(monthlyReportPath);
+    folderExists = await this.app.vault.adapter.exists(this.MonthlyReportPath);
     if (!folderExists) {
-      await this.app.vault.createFolder(monthlyReportPath);
+      await this.app.vault.createFolder(this.MonthlyReportPath);
       new Notice('Monthly Reports folder created successfully.', 3000);
     }
 
     // Ensure the daily expenses folder exists
-    const dailyExpensesPath = `${financeFolderPath}/DailyExpenses`;
-    folderExists = await this.app.vault.adapter.exists(dailyExpensesPath);
+    folderExists = await this.app.vault.adapter.exists(this.DailyExpensesPath);
     if (!folderExists) {
-      await this.app.vault.createFolder(dailyExpensesPath);
+      await this.app.vault.createFolder(this.DailyExpensesPath);
       new Notice('Daily Expenses folder created successfully.', 3000);
     }
   }
@@ -114,32 +112,5 @@ export default class FinanceTrackerPlugin extends Plugin {
     }
   }
 
-  async saveTransaction(transaction: { date: string; amount: number; type: string; category: string }) {
-    const transactionDate = new Date(transaction.date);
-    const today = new Date();
-  
-    let filePath = '';
-  
-    // Check if we need to create a new file
-    // Check the current date, if we've passed the billDueDay and are in a new month, we create a new file
-    if (today.getDate() > this.settings.billDueDay && today.getMonth() > transactionDate.getMonth()) {
-      // If it's December, we also need to check the year transition
-      if (transactionDate.getMonth() === 11 && today.getMonth() === 0) {
-        filePath = this.DailyExpensesPath + `-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}.md`;
-      } else {
-        filePath = `${this.DailyExpensesPath}/${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 2).padStart(2, '0')}.md`; // +2 because getMonth() is 0 indexed, and we're adding for the next month
-      }
-    } else {
-      filePath = `${this.DailyExpensesPath}/${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}.md`;
-    }
-  
-    try {
-      const fileContents = await this.app.vault.adapter.read(filePath).catch(() => '');
-      const updatedContents = `${fileContents}- ${transaction.date} | ${transaction.amount} | ${transaction.type} | ${transaction.category}\n`;
-      await this.app.vault.adapter.write(filePath, updatedContents);
-    } catch (error) {
-      console.error("Failed to save transaction:", error);
-    }
-  }
   // ... Possibly more methods or logic
 }

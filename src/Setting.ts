@@ -49,6 +49,16 @@ export default class SampleSettingTab extends PluginSettingTab {
             this.plugin.settings.salaryDate = value.trim() || DEFAULT_SETTINGS.salaryDate;
             await this.plugin.saveSettings();
           }));
+
+          new Setting(containerEl)
+        .setName('Salary')
+        .setDesc('Date when you receive your salary')
+        .addText(text => text
+          .setValue(this.plugin.settings.salary.toString())
+          .onChange(async (value) => {
+            this.plugin.settings.salary = parseInt(value.trim()) || DEFAULT_SETTINGS.salary;
+            await this.plugin.saveSettings();
+          }));
       
       // Add other settings here...
     }
