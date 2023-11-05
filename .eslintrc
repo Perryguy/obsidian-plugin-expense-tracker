@@ -7,11 +7,17 @@
     ],
     "extends": [
       "eslint:recommended",
+      "plugin:react/recommended",
+      "plugin:react-hooks/recommended",
       "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended"
     ], 
     "parserOptions": {
-        "sourceType": "module"
+      "ecmaVersion": 2021, // or whatever ECMAScript version you're targeting
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
     },
     "rules": {
       "no-unused-vars": "off",
